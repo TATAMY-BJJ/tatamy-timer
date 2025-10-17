@@ -1,15 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { NovaAkceDialog } from "@/components/NovaAkceDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const AkceList = () => {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [akceToDelete, setAkceToDelete] = useState<{ id: string; datum: string } | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: akce, isLoading } = useQuery({
     queryKey: ["akce"],
@@ -23,6 +38,45 @@ const AkceList = () => {
       return data;
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (akceId: string) => {
+      const { error } = await supabase
+        .from("akce")
+        .delete()
+        .eq("id", akceId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["akce"] });
+      toast({
+        title: "Akce smazána",
+        description: "Akce byla úspěšně smazána",
+      });
+      setDeleteDialogOpen(false);
+      setAkceToDelete(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se smazat akci",
+        variant: "destructive",
+      });
+      console.error(error);
+    },
+  });
+
+  const handleDeleteClick = (akce: { id: string; datum: string }) => {
+    setAkceToDelete(akce);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (akceToDelete) {
+      deleteMutation.mutate(akceToDelete.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -51,8 +105,7 @@ const AkceList = () => {
             {akce.map((akce) => (
               <Card 
                 key={akce.id} 
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/akce/${akce.id}`)}
+                className="hover:shadow-lg transition-shadow"
               >
                 <CardHeader>
                   <CardTitle className="text-xl">
@@ -67,9 +120,26 @@ const AkceList = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="outline" size="sm">
-                    Otevřít detail →
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate(`/akce/${akce.id}`)}
+                      className="flex-1"
+                    >
+                      Otevřít detail →
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(akce);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -89,6 +159,31 @@ const AkceList = () => {
       </div>
 
       <NovaAkceDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Smazat akci?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Opravdu chcete smazat akci{" "}
+              <strong>
+                {akceToDelete && new Date(akceToDelete.datum).toLocaleDateString("cs-CZ", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric"
+                })}
+              </strong>
+              ? Tato akce bude nenávratně odstraněna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Zrušit</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              Smazat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
