@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Play, Square, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { TatamyLogo } from "@/components/TatamyLogo";
 
 const ZinenkaAdmin = () => {
   const { akceId, cislo } = useParams();
@@ -179,6 +180,7 @@ const ZinenkaAdmin = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <TatamyLogo />
       <div className="border-b bg-card sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 py-4">
           <Button

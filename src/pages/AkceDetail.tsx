@@ -8,6 +8,7 @@ import { RozhodciTab } from "@/components/tabs/RozhodciTab";
 import { SouctyTab } from "@/components/tabs/SouctyTab";
 import { UsekyTab } from "@/components/tabs/UsekyTab";
 import { ZinenkyTab } from "@/components/tabs/ZinenkyTab";
+import { TatamyLogo } from "@/components/TatamyLogo";
 
 const AkceDetail = () => {
   const { id } = useParams();
@@ -45,6 +46,7 @@ const AkceDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <TatamyLogo />
       <div className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <Button

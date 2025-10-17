@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { TatamyLogo } from "@/components/TatamyLogo";
 
 const AkceList = () => {
   const navigate = useNavigate();
@@ -80,6 +81,7 @@ const AkceList = () => {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      <TatamyLogo />
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
