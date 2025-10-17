@@ -14,14 +14,32 @@ export const SouctyTab = ({ akceId }: SouctyTabProps) => {
       const { data, error } = await supabase
         .from("soucty")
         .select("*")
-        .eq("akce_id", akceId)
-        .order("zinenka_cislo")
-        .order("cislo_id");
+        .eq("akce_id", akceId);
       
       if (error) throw error;
       return data;
     },
   });
+
+  // Seskupit data podle rozhodčího a sečíst časy
+  const groupedSoucty = soucty?.reduce((acc, soucet) => {
+    const key = soucet.rozhodci_id || soucet.cislo_id;
+    if (!acc[key]) {
+      acc[key] = {
+        cislo_id: soucet.cislo_id,
+        jmeno: soucet.jmeno,
+        prijmeni: soucet.prijmeni,
+        celkem_ms: 0,
+      };
+    }
+    acc[key].celkem_ms += soucet.celkem_ms || 0;
+    return acc;
+  }, {} as Record<string, { cislo_id: number; jmeno: string; prijmeni: string; celkem_ms: number }>);
+
+  // Převést na pole a seřadit podle ID
+  const souctyArray = groupedSoucty 
+    ? Object.values(groupedSoucty).sort((a, b) => a.cislo_id - b.cislo_id)
+    : [];
 
   const formatMinutes = (ms: number) => {
     return Math.floor(ms / 60000);
@@ -32,28 +50,26 @@ export const SouctyTab = ({ akceId }: SouctyTabProps) => {
       <CardHeader>
         <CardTitle>Součty měření</CardTitle>
         <CardDescription>
-          Přehled celkového času po rozhodčích a žínenkách
+          Celkový čas každého rozhodčího ze všech žíněnek
         </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <p className="text-muted-foreground">Načítání...</p>
-        ) : soucty && soucty.length > 0 ? (
+        ) : souctyArray.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Žíněnka</TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Iniciály</TableHead>
                   <TableHead className="text-right">Součet (min)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {soucty.map((soucet, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell className="font-medium">#{soucet.zinenka_cislo}</TableCell>
-                    <TableCell>{String(soucet.cislo_id).padStart(2, "0")}</TableCell>
+                {souctyArray.map((soucet) => (
+                  <TableRow key={soucet.cislo_id}>
+                    <TableCell className="font-medium">{String(soucet.cislo_id).padStart(2, "0")}</TableCell>
                     <TableCell>
                       {soucet.jmeno && soucet.prijmeni 
                         ? `${soucet.jmeno.charAt(0)}. ${soucet.prijmeni}`
