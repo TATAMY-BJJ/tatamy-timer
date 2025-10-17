@@ -29,6 +29,24 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     },
   });
 
+  const { data: zinenky } = useQuery({
+    queryKey: ["zinenky", akceId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("zinenky")
+        .select("*")
+        .eq("akce_id", akceId);
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const getZinenkaNazev = (cislo: number) => {
+    const zinenka = zinenky?.find(z => z.cislo === cislo);
+    return zinenka?.nazev || `Žíněnka #${cislo}`;
+  };
+
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString("cs-CZ", {
       hour: "2-digit",
@@ -70,7 +88,7 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
               <TableBody>
                 {useky.map((usek) => (
                   <TableRow key={usek.id}>
-                    <TableCell className="font-medium">#{usek.zinenka_cislo}</TableCell>
+                    <TableCell className="font-medium">{getZinenkaNazev(usek.zinenka_cislo)}</TableCell>
                     <TableCell>
                       {String(usek.rozhodci?.cislo_id || "-").padStart(2, "0")}
                     </TableCell>
