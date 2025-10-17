@@ -33,6 +33,21 @@ const ZinenkaAdmin = () => {
     },
   });
 
+  const { data: zinenka } = useQuery({
+    queryKey: ["zinenka", akceId, cislo],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("zinenky")
+        .select("*")
+        .eq("akce_id", akceId)
+        .eq("cislo", parseInt(cislo!))
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: aktivniUsek, refetch: refetchUsek } = useQuery({
     queryKey: ["aktivni-usek", akceId, cislo],
     queryFn: async () => {
@@ -192,7 +207,7 @@ const ZinenkaAdmin = () => {
             Zpět na detail akce
           </Button>
           <h1 className="text-2xl font-bold">
-            {akce && new Date(akce.datum).toLocaleDateString("cs-CZ")} · Žíněnka #{cislo}
+            {akce && new Date(akce.datum).toLocaleDateString("cs-CZ")} · {zinenka?.nazev || `Žíněnka #${cislo}`}
           </h1>
         </div>
       </div>

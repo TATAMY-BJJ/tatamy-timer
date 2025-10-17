@@ -109,6 +109,38 @@ export type Database = {
           },
         ]
       }
+      zinenky: {
+        Row: {
+          akce_id: string
+          cislo: number
+          created_at: string
+          id: string
+          nazev: string | null
+        }
+        Insert: {
+          akce_id: string
+          cislo: number
+          created_at?: string
+          id?: string
+          nazev?: string | null
+        }
+        Update: {
+          akce_id?: string
+          cislo?: number
+          created_at?: string
+          id?: string
+          nazev?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zinenky_akce_id_fkey"
+            columns: ["akce_id"]
+            isOneToOne: false
+            referencedRelation: "akce"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       soucty: {
