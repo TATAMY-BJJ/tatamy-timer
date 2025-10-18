@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { useState } from "react";
 import { NovaAkceDialog } from "@/components/NovaAkceDialog";
+import { EditAkceDialog } from "@/components/EditAkceDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +23,9 @@ import { TatamyLogo } from "@/components/TatamyLogo";
 const AkceList = () => {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [akceToEdit, setAkceToEdit] = useState<{ id: string; nazev: string | null; datum: string } | null>(null);
   const [akceToDelete, setAkceToDelete] = useState<{ id: string; datum: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -68,6 +71,11 @@ const AkceList = () => {
     },
   });
 
+  const handleEditClick = (akce: { id: string; nazev: string | null; datum: string }) => {
+    setAkceToEdit(akce);
+    setEditDialogOpen(true);
+  };
+
   const handleDeleteClick = (akce: { id: string; datum: string }) => {
     setAkceToDelete(akce);
     setDeleteDialogOpen(true);
@@ -110,17 +118,32 @@ const AkceList = () => {
                 className="hover:shadow-lg transition-shadow"
               >
                 <CardHeader>
-                  <CardTitle className="text-xl">
-                    {akce.nazev && `${akce.nazev} · `}
-                    {new Date(akce.datum).toLocaleDateString("cs-CZ", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric"
-                    })}
-                  </CardTitle>
-                  <CardDescription>
-                    Počet žíněnek: {akce.pocet_zinenek}
-                  </CardDescription>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl">
+                        {akce.nazev && `${akce.nazev} · `}
+                        {new Date(akce.datum).toLocaleDateString("cs-CZ", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric"
+                        })}
+                      </CardTitle>
+                      <CardDescription>
+                        Počet žíněnek: {akce.pocet_zinenek}
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(akce);
+                      }}
+                      className="shrink-0"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-2">
@@ -162,6 +185,14 @@ const AkceList = () => {
       </div>
 
       <NovaAkceDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      
+      {akceToEdit && (
+        <EditAkceDialog 
+          open={editDialogOpen} 
+          onOpenChange={setEditDialogOpen}
+          akce={akceToEdit}
+        />
+      )}
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
