@@ -58,6 +58,7 @@ const AkceDetail = () => {
             Zpět na přehled
           </Button>
           <h1 className="text-3xl font-bold">
+            {akce.nazev && `${akce.nazev} · `}
             {new Date(akce.datum).toLocaleDateString("cs-CZ", {
               day: "numeric",
               month: "long",

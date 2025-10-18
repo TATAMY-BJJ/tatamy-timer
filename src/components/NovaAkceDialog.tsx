@@ -15,6 +15,7 @@ interface NovaAkceDialogProps {
 
 export const NovaAkceDialog = ({ open, onOpenChange }: NovaAkceDialogProps) => {
   const [datum, setDatum] = useState("");
+  const [nazev, setNazev] = useState("");
   const [pocetZinenek, setPocetZinenek] = useState("12");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ export const NovaAkceDialog = ({ open, onOpenChange }: NovaAkceDialogProps) => {
         .from("akce")
         .insert({
           datum,
+          nazev: nazev.trim() || null,
           pocet_zinenek: pocet,
         })
         .select()
@@ -74,6 +76,18 @@ export const NovaAkceDialog = ({ open, onOpenChange }: NovaAkceDialogProps) => {
                 value={datum}
                 onChange={(e) => setDatum(e.target.value)}
                 required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="nazev">Název akce (volitelné)</Label>
+              <Input
+                id="nazev"
+                type="text"
+                value={nazev}
+                onChange={(e) => setNazev(e.target.value)}
+                placeholder="Např. Krajské kolo"
+                maxLength={100}
               />
             </div>
             

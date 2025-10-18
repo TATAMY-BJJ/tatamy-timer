@@ -111,6 +111,7 @@ const AkceList = () => {
               >
                 <CardHeader>
                   <CardTitle className="text-xl">
+                    {akce.nazev && `${akce.nazev} · `}
                     {new Date(akce.datum).toLocaleDateString("cs-CZ", {
                       day: "numeric",
                       month: "long",
