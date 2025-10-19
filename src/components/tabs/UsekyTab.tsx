@@ -1,13 +1,31 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RotateCcw } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface UsekyTabProps {
   akceId: string;
 }
 
 export const UsekyTab = ({ akceId }: UsekyTabProps) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: useky, isLoading } = useQuery({
     queryKey: ["useky", akceId],
     queryFn: async () => {
@@ -61,14 +79,57 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     return Math.floor(ms / 60000) + " min";
   };
 
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("useky")
+        .delete()
+        .eq("akce_id", akceId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["useky", akceId] });
+      queryClient.invalidateQueries({ queryKey: ["soucty", akceId] });
+      toast({
+        title: "Úseky vymazány",
+        description: "Všechny úseky byly úspěšně vymazány",
+      });
+      setShowDeleteDialog(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se vymazat úseky",
+        variant: "destructive",
+      });
+      console.error(error);
+    },
+  });
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Všechny úseky měření</CardTitle>
-        <CardDescription>
-          Kompletní seznam jednotlivých časových úseků
-        </CardDescription>
-      </CardHeader>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Všechny úseky měření</CardTitle>
+              <CardDescription>
+                Kompletní seznam jednotlivých časových úseků
+              </CardDescription>
+            </div>
+            {useky && useky.length > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Vymazat vše
+              </Button>
+            )}
+          </div>
+        </CardHeader>
       <CardContent>
         {isLoading ? (
           <p className="text-muted-foreground">Načítání...</p>
@@ -114,5 +175,28 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
         )}
       </CardContent>
     </Card>
+
+    <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Opravdu chcete vymazat všechny úseky?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tato akce je nevratná. Budou vymazány všechny úseky měření včetně jejich součtů. 
+            Všechna naměřená data pro tuto akci budou trvale ztracena.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Zrušit</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => deleteAllMutation.mutate()}
+            disabled={deleteAllMutation.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleteAllMutation.isPending ? "Mažu..." : "Vymazat vše"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
