@@ -60,15 +60,15 @@ export const SouctyTab = ({ akceId }: SouctyTabProps) => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Iniciály</TableHead>
-                  <TableHead className="text-right">Součet (min)</TableHead>
+                <TableRow className="bg-primary/10 hover:bg-primary/10">
+                  <TableHead className="text-primary font-semibold">ID</TableHead>
+                  <TableHead className="text-primary font-semibold">Iniciály</TableHead>
+                  <TableHead className="text-right text-primary font-semibold">Součet (min)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {souctyArray.map((soucet) => (
-                  <TableRow key={soucet.cislo_id}>
+                {souctyArray.map((soucet, index) => (
+                  <TableRow key={soucet.cislo_id} className={index % 2 === 0 ? "bg-muted/30" : ""}>
                     <TableCell className="font-medium">{String(soucet.cislo_id).padStart(2, "0")}</TableCell>
                     <TableCell>
                       {soucet.jmeno && soucet.prijmeni 

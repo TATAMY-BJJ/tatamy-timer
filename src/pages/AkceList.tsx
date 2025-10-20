@@ -96,10 +96,10 @@ const AkceList = () => {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">TATAMY | EVIDENCE ROZHODČÍCH</h1>
+            <h1 className="text-4xl font-heading font-bold text-foreground">TATAMY | EVIDENCE ROZHODČÍCH</h1>
             <p className="text-muted-foreground mt-1">Správa turnajů</p>
           </div>
-          <Button onClick={() => setDialogOpen(true)} className="bg-secondary hover:bg-secondary/90" size="lg">
+          <Button onClick={() => setDialogOpen(true)} size="lg">
             <Plus className="mr-2 h-5 w-5" />
             Založit akci
           </Button>
@@ -108,11 +108,11 @@ const AkceList = () => {
         {isLoading ? <div className="text-center py-12">
             <p className="text-muted-foreground">Načítání...</p>
           </div> : akce && akce.length > 0 ? <div className="grid gap-4">
-            {akce.map(akce => <Card key={akce.id} className="hover:shadow-lg transition-shadow">
+            {akce.map(akce => <Card key={akce.id} className="hover:shadow-lg hover:shadow-primary/5 transition-all border-l-4 border-l-primary">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
-                      <CardTitle className="text-xl">
+                      <CardTitle className="text-xl font-heading">
                         {akce.nazev && `${akce.nazev} · `}
                         {new Date(akce.datum).toLocaleDateString("cs-CZ", {
                     day: "numeric",
@@ -134,7 +134,7 @@ const AkceList = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/akce/${akce.id}`)} className="flex-1">
+                    <Button size="sm" onClick={() => navigate(`/akce/${akce.id}`)} className="flex-1">
                       Otevřít detail →
                     </Button>
                     <Button variant="destructive" size="sm" onClick={e => {

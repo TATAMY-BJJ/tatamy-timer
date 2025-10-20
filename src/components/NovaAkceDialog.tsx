@@ -61,7 +61,7 @@ export const NovaAkceDialog = ({ open, onOpenChange }: NovaAkceDialogProps) => {
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Založit akci</DialogTitle>
+            <DialogTitle className="font-heading">Založit akci</DialogTitle>
             <DialogDescription>
               Vytvořte nový závodní den s daným počtem žíněnek
             </DialogDescription>
@@ -114,8 +114,7 @@ export const NovaAkceDialog = ({ open, onOpenChange }: NovaAkceDialogProps) => {
               Zrušit
             </Button>
             <Button 
-              type="submit" 
-              className="bg-secondary hover:bg-secondary/90"
+              type="submit"
               disabled={createAkce.isPending}
             >
               {createAkce.isPending ? "Vytváří se..." : "Vytvořit"}

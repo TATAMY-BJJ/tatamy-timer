@@ -196,7 +196,7 @@ const ZinenkaAdmin = () => {
   return (
     <div className="min-h-screen bg-background">
       <TatamyLogo />
-      <div className="border-b bg-card sticky top-0 z-10">
+      <div className="border-b-2 border-b-primary bg-card sticky top-0 z-10 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4">
           <Button
             variant="ghost"
@@ -206,7 +206,7 @@ const ZinenkaAdmin = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zpět na detail akce
           </Button>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-heading font-bold">
             {akce && new Date(akce.datum).toLocaleDateString("cs-CZ")} · {zinenka?.nazev || `Žíněnka #${cislo}`}
           </h1>
         </div>
@@ -266,7 +266,7 @@ const ZinenkaAdmin = () => {
                     <span> ({aktivniUsek.rozhodci.jmeno} {aktivniUsek.rozhodci.prijmeni})</span>
                   )}
                 </p>
-                <p className="text-6xl font-bold font-mono">{formatTime(elapsedSeconds)}</p>
+                <p className="text-6xl font-bold font-mono text-primary">{formatTime(elapsedSeconds)}</p>
               </div>
 
               <div className="grid gap-4">

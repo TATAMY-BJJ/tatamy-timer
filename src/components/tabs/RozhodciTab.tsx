@@ -114,7 +114,6 @@ export const RozhodciTab = ({ akceId }: RozhodciTabProps) => {
         <Button
           onClick={() => saveRozhodci.mutate()}
           disabled={saveRozhodci.isPending || Object.keys(editedData).length === 0}
-          className="bg-secondary hover:bg-secondary/90"
           size="lg"
         >
           {saveRozhodci.isPending ? "Ukládání..." : "Uložit rozhodčí"}

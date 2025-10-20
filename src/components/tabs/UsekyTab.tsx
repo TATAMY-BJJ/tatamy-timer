@@ -137,18 +137,18 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Žíněnka</TableHead>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Iniciály</TableHead>
-                  <TableHead>Start</TableHead>
-                  <TableHead>Stop</TableHead>
-                  <TableHead className="text-right">Délka</TableHead>
+                <TableRow className="bg-primary/10 hover:bg-primary/10">
+                  <TableHead className="text-primary font-semibold">Žíněnka</TableHead>
+                  <TableHead className="text-primary font-semibold">ID</TableHead>
+                  <TableHead className="text-primary font-semibold">Iniciály</TableHead>
+                  <TableHead className="text-primary font-semibold">Start</TableHead>
+                  <TableHead className="text-primary font-semibold">Stop</TableHead>
+                  <TableHead className="text-right text-primary font-semibold">Délka</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {useky.map((usek) => (
-                  <TableRow key={usek.id}>
+                {useky.map((usek, index) => (
+                  <TableRow key={usek.id} className={index % 2 === 0 ? "bg-muted/30" : ""}>
                     <TableCell className="font-medium">{getZinenkaNazev(usek.zinenka_cislo)}</TableCell>
                     <TableCell>
                       {String(usek.rozhodci?.cislo_id || "-").padStart(2, "0")}

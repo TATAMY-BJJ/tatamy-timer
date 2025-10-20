@@ -86,7 +86,7 @@ export const EditZinenkaDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Přejmenovat žíněnku #{cislo}</DialogTitle>
+          <DialogTitle className="font-heading">Přejmenovat žíněnku #{cislo}</DialogTitle>
           <DialogDescription>
             Zadejte vlastní název pro tuto žíněnku (volitelné)
           </DialogDescription>

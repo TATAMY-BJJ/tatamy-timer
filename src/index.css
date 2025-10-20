@@ -8,42 +8,47 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Základní barvy - sportovně-technický design */
-    --background: 0 0% 96%;
-    --foreground: 0 0% 11%;
+    /* TATAMY BJJ Brand Colors */
+    --background: 0 0% 95%;
+    --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 11%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 11%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Akční barvy */
-    --primary: 142 71% 45%;  /* Zelená #28A745 - Start */
+    /* Akční barvy - TATAMY Red Theme */
+    --primary: 0 82% 51%;  /* TATAMY Červená #DC143C */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 207 90% 54%;  /* Modrá #007BFF - Admin akce */
+    --secondary: 0 0% 15%;  /* Tmavě šedá/černá pro sekundární akce */
     --secondary-foreground: 0 0% 100%;
 
-    --destructive: 354 70% 54%;  /* Červená #DC3545 - Stop */
+    --destructive: 0 82% 51%;  /* TATAMY Červená pro destruktivní akce */
     --destructive-foreground: 0 0% 100%;
 
-    --muted: 0 0% 88%;  /* Šedá #E0E0E0 - Neaktivní */
+    --muted: 0 0% 88%;  /* Šedá - Neaktivní */
     --muted-foreground: 0 0% 45%;
 
-    --accent: 207 90% 54%;
+    --accent: 0 82% 51%;  /* TATAMY Červená jako akcent */
     --accent-foreground: 0 0% 100%;
 
     /* Success a Warning pro hlášky */
-    --success: 134 61% 92%;  /* Světle zelená pro úspěch */
-    --success-foreground: 142 71% 25%;
+    --success: 0 82% 96%;  /* Světle červená pro úspěch */
+    --success-foreground: 0 82% 35%;
     
     --warning: 355 100% 97%;  /* Světle červená pro chybu */
     --warning-foreground: 354 70% 40%;
 
+    /* TATAMY Brand Variables */
+    --tatamy-red: 0 82% 51%;
+    --tatamy-black: 0 0% 10%;
+    --tatamy-white: 0 0% 98%;
+
     --border: 0 0% 88%;
     --input: 0 0% 88%;
-    --ring: 142 71% 45%;
+    --ring: 0 82% 51%;
 
     --radius: 0.5rem;
 
@@ -67,30 +72,30 @@ All colors MUST be HSL.
     --popover: 0 0% 15%;
     --popover-foreground: 0 0% 96%;
 
-    --primary: 142 71% 45%;
+    --primary: 0 82% 51%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 207 90% 54%;
+    --secondary: 0 0% 20%;
     --secondary-foreground: 0 0% 100%;
 
-    --destructive: 354 70% 54%;
+    --destructive: 0 82% 51%;
     --destructive-foreground: 0 0% 100%;
 
     --muted: 0 0% 25%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 207 90% 54%;
+    --accent: 0 82% 51%;
     --accent-foreground: 0 0% 100%;
 
-    --success: 134 50% 20%;
-    --success-foreground: 134 61% 85%;
+    --success: 0 82% 25%;
+    --success-foreground: 0 82% 90%;
     
     --warning: 355 70% 25%;
     --warning-foreground: 355 100% 90%;
 
     --border: 0 0% 25%;
     --input: 0 0% 25%;
-    --ring: 142 71% 45%;
+    --ring: 0 82% 51%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;

@@ -6,7 +6,7 @@ export const TatamyLogo = () => {
       <img 
         src={tatamyLogo} 
         alt="TATAMY" 
-        className="h-8 w-auto opacity-40 hover:opacity-60 transition-opacity"
+        className="h-12 w-auto opacity-70 hover:opacity-90 transition-all duration-200 drop-shadow-md"
       />
     </div>
   );

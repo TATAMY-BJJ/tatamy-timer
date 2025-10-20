@@ -206,7 +206,7 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
             <div key={cislo} className="relative">
               <Button
                 onClick={() => navigate(`/akce/${akceId}/zinenka/${cislo}`)}
-                className="h-32 w-full text-xl font-bold bg-secondary hover:bg-secondary/90"
+                className="h-32 w-full text-xl font-bold"
                 size="lg"
               >
                 <div className="flex flex-col items-center gap-2">
@@ -239,7 +239,7 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
                   </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Přejmenovat žíněnku #{cislo}</DialogTitle>
+                    <DialogTitle className="font-heading">Přejmenovat žíněnku #{cislo}</DialogTitle>
                     <DialogDescription>
                       Zadejte vlastní název pro tuto žíněnku (nechte prázdné pro výchozí název)
                     </DialogDescription>

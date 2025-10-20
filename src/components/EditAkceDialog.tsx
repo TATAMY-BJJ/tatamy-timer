@@ -64,7 +64,7 @@ export const EditAkceDialog = ({ open, onOpenChange, akce }: EditAkceDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Upravit název akce</DialogTitle>
+          <DialogTitle className="font-heading">Upravit název akce</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">

@@ -47,7 +47,7 @@ const AkceDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <TatamyLogo />
-      <div className="border-b bg-card">
+      <div className="border-b-2 border-b-primary bg-card sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <Button
             variant="ghost"
@@ -57,7 +57,7 @@ const AkceDetail = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Zpět na přehled
           </Button>
-          <h1 className="text-3xl font-bold">
+          <h1 className="text-3xl font-heading font-bold">
             {akce.nazev && `${akce.nazev} · `}
             {new Date(akce.datum).toLocaleDateString("cs-CZ", {
               day: "numeric",
