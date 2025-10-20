@@ -115,6 +115,7 @@ export type Database = {
       zinenky: {
         Row: {
           akce_id: string
+          casomeric: string | null
           cislo: number
           created_at: string
           id: string
@@ -122,6 +123,7 @@ export type Database = {
         }
         Insert: {
           akce_id: string
+          casomeric?: string | null
           cislo: number
           created_at?: string
           id?: string
@@ -129,6 +131,7 @@ export type Database = {
         }
         Update: {
           akce_id?: string
+          casomeric?: string | null
           cislo?: number
           created_at?: string
           id?: string

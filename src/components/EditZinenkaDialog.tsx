@@ -18,6 +18,7 @@ interface EditZinenkaDialogProps {
   akceId: string;
   cislo: number;
   currentNazev: string | null;
+  currentCasomeric: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -26,10 +27,12 @@ export const EditZinenkaDialog = ({
   akceId,
   cislo,
   currentNazev,
+  currentCasomeric,
   open,
   onOpenChange,
 }: EditZinenkaDialogProps) => {
   const [nazev, setNazev] = useState(currentNazev || "");
+  const [casomeric, setCasomeric] = useState(currentCasomeric || "");
   const queryClient = useQueryClient();
 
   const saveMutation = useMutation({
@@ -46,7 +49,10 @@ export const EditZinenkaDialog = ({
         // Update
         const { error } = await supabase
           .from("zinenky")
-          .update({ nazev: nazev.trim() || null })
+          .update({ 
+            nazev: nazev.trim() || null,
+            casomeric: casomeric.trim() || null
+          })
           .eq("id", existing.id);
         if (error) throw error;
       } else {
@@ -57,6 +63,7 @@ export const EditZinenkaDialog = ({
             akce_id: akceId,
             cislo,
             nazev: nazev.trim() || null,
+            casomeric: casomeric.trim() || null,
           });
         if (error) throw error;
       }
@@ -93,6 +100,16 @@ export const EditZinenkaDialog = ({
               value={nazev}
               onChange={(e) => setNazev(e.target.value)}
               placeholder="Např. Hlavní žíněnka"
+              maxLength={100}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="casomeric">Časoměřič (nepovinné)</Label>
+            <Input
+              id="casomeric"
+              value={casomeric}
+              onChange={(e) => setCasomeric(e.target.value)}
+              placeholder="Např. Jan Novák"
               maxLength={100}
             />
           </div>

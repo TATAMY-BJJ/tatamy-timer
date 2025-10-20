@@ -49,7 +49,7 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
 
   // Update názvu žíněnky
   const updateNazevMutation = useMutation({
-    mutationFn: async ({ cislo, nazev }: { cislo: number; nazev: string }) => {
+    mutationFn: async ({ cislo, nazev, casomeric }: { cislo: number; nazev: string; casomeric: string }) => {
       // Najdi žíněnku v DB
       const existujici = zinenky?.find(z => z.cislo === cislo);
       
@@ -57,7 +57,10 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
         // Update existující
         const { error } = await supabase
           .from("zinenky")
-          .update({ nazev: nazev || null })
+          .update({ 
+            nazev: nazev || null,
+            casomeric: casomeric || null
+          })
           .eq("id", existujici.id);
         
         if (error) throw error;
@@ -69,6 +72,7 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
             akce_id: akceId,
             cislo: cislo,
             nazev: nazev || null,
+            casomeric: casomeric || null,
           });
         
         if (error) throw error;
@@ -86,15 +90,22 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
     },
   });
 
+  const [novyCasomeric, setNovyCasomeric] = useState("");
+
   const handleEditClick = (cislo: number) => {
     const zinenka = zinenky?.find(z => z.cislo === cislo);
     setEditingZinenka(cislo);
     setNovyNazev(zinenka?.nazev || "");
+    setNovyCasomeric(zinenka?.casomeric || "");
   };
 
   const handleSaveNazev = () => {
     if (editingZinenka !== null) {
-      updateNazevMutation.mutate({ cislo: editingZinenka, nazev: novyNazev });
+      updateNazevMutation.mutate({ 
+        cislo: editingZinenka, 
+        nazev: novyNazev,
+        casomeric: novyCasomeric
+      });
     }
   };
 
@@ -195,12 +206,19 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
             <div key={cislo} className="relative">
               <Button
                 onClick={() => navigate(`/akce/${akceId}/zinenka/${cislo}`)}
-                className="h-24 w-full text-xl font-bold bg-secondary hover:bg-secondary/90"
+                className="h-32 w-full text-xl font-bold bg-secondary hover:bg-secondary/90"
                 size="lg"
               >
                 <div className="flex flex-col items-center gap-2">
                   <ExternalLink className="h-5 w-5" />
-                  <span className="text-center">{getZinenkaNazev(cislo)}</span>
+                  <div className="text-center">
+                    <div>{getZinenkaNazev(cislo)}</div>
+                    {zinenky?.find(z => z.cislo === cislo)?.casomeric && (
+                      <div className="text-sm font-normal opacity-80 mt-1">
+                        Časoměřič: {zinenky.find(z => z.cislo === cislo)?.casomeric}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Button>
               
@@ -226,17 +244,26 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
                       Zadejte vlastní název pro tuto žíněnku (nechte prázdné pro výchozí název)
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="nazev">Název žíněnky</Label>
-                      <Input
-                        id="nazev"
-                        value={novyNazev}
-                        onChange={(e) => setNovyNazev(e.target.value)}
-                        placeholder={`Žíněnka #${cislo}`}
-                      />
-                    </div>
-                  </div>
+                   <div className="space-y-4 py-4">
+                     <div className="space-y-2">
+                       <Label htmlFor="nazev">Název žíněnky</Label>
+                       <Input
+                         id="nazev"
+                         value={novyNazev}
+                         onChange={(e) => setNovyNazev(e.target.value)}
+                         placeholder={`Žíněnka #${cislo}`}
+                       />
+                     </div>
+                     <div className="space-y-2">
+                       <Label htmlFor="casomeric">Časoměřič (nepovinné)</Label>
+                       <Input
+                         id="casomeric"
+                         value={novyCasomeric}
+                         onChange={(e) => setNovyCasomeric(e.target.value)}
+                         placeholder="Např. Jan Novák"
+                       />
+                     </div>
+                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setEditingZinenka(null)}>
                       Zrušit
