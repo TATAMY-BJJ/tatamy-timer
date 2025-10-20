@@ -111,24 +111,10 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Všechny úseky měření</CardTitle>
-              <CardDescription>
-                Kompletní seznam jednotlivých časových úseků
-              </CardDescription>
-            </div>
-            {useky && useky.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Vymazat vše
-              </Button>
-            )}
-          </div>
+          <CardTitle>Všechny úseky měření</CardTitle>
+          <CardDescription>
+            Kompletní seznam jednotlivých časových úseků
+          </CardDescription>
         </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -172,6 +158,20 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
           <p className="text-muted-foreground text-center py-8">
             Zatím nebylo provedeno žádné měření
           </p>
+        )}
+        
+        {useky && useky.length > 0 && (
+          <div className="flex justify-center mt-6 pt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="border-destructive text-destructive hover:bg-destructive/10"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Vymazat vše
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
