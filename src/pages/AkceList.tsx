@@ -97,7 +97,7 @@ const AkceList = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">TATAMY | EVIDENCE ROZHODČÍCH</h1>
-            <p className="text-muted-foreground mt-1">Správa závodních dnů</p>
+            <p className="text-muted-foreground mt-1">Správa turnajů</p>
           </div>
           <Button onClick={() => setDialogOpen(true)} className="bg-secondary hover:bg-secondary/90" size="lg">
             <Plus className="mr-2 h-5 w-5" />
