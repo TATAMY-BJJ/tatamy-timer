@@ -2,10 +2,20 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink, Pencil } from "lucide-react";
+import { ExternalLink, Pencil, Trash2, Plus } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -20,6 +30,7 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
   const queryClient = useQueryClient();
   const [editingZinenka, setEditingZinenka] = useState<number | null>(null);
   const [novyNazev, setNovyNazev] = useState("");
+  const [deletingZinenka, setDeletingZinenka] = useState<number | null>(null);
 
   // Načíst existující žíněnky z databáze
   const { data: zinenky } = useQuery({
@@ -92,14 +103,92 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
     return zinenka?.nazev || `Žíněnka #${cislo}`;
   };
 
+  // Přidat novou žíněnku
+  const addZinenkaMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("akce")
+        .update({ pocet_zinenek: pocetZinenek + 1 })
+        .eq("id", akceId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["akce", akceId] });
+      toast.success("Nová žíněnka přidána");
+    },
+    onError: () => {
+      toast.error("Chyba při přidávání žíněnky");
+    },
+  });
+
+  // Smazat žíněnku
+  const deleteZinenkaMutation = useMutation({
+    mutationFn: async (cislo: number) => {
+      // Smazat žíněnku z DB
+      const zinenka = zinenky?.find(z => z.cislo === cislo);
+      if (zinenka) {
+        const { error: deleteZinenkaError } = await supabase
+          .from("zinenky")
+          .delete()
+          .eq("id", zinenka.id);
+
+        if (deleteZinenkaError) throw deleteZinenkaError;
+      }
+
+      // Smazat všechny úseky spojené s touto žíněnkou
+      const { error: deleteUsekyError } = await supabase
+        .from("useky")
+        .delete()
+        .eq("akce_id", akceId)
+        .eq("zinenka_cislo", cislo);
+
+      if (deleteUsekyError) throw deleteUsekyError;
+
+      // Snížit počet žíněnek jen pokud je to poslední
+      if (cislo === pocetZinenek) {
+        const { error: updateError } = await supabase
+          .from("akce")
+          .update({ pocet_zinenek: pocetZinenek - 1 })
+          .eq("id", akceId);
+
+        if (updateError) throw updateError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["akce", akceId] });
+      queryClient.invalidateQueries({ queryKey: ["zinenky", akceId] });
+      queryClient.invalidateQueries({ queryKey: ["useky", akceId] });
+      queryClient.invalidateQueries({ queryKey: ["soucty", akceId] });
+      setDeletingZinenka(null);
+      toast.success("Žíněnka smazána");
+    },
+    onError: () => {
+      toast.error("Chyba při mazání žíněnky");
+    },
+  });
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Žíněnky</CardTitle>
-        <CardDescription>
-          Otevřete administraci jednotlivých žíněnek
-        </CardDescription>
-      </CardHeader>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Žíněnky</CardTitle>
+              <CardDescription>
+                Otevřete administraci jednotlivých žíněnek
+              </CardDescription>
+            </div>
+            <Button
+              onClick={() => addZinenkaMutation.mutate()}
+              disabled={addZinenkaMutation.isPending}
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Přidat žíněnku
+            </Button>
+          </div>
+        </CardHeader>
       <CardContent>
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: pocetZinenek }, (_, i) => i + 1).map((cislo) => (
@@ -115,20 +204,21 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
                 </div>
               </Button>
               
-              <Dialog open={editingZinenka === cislo} onOpenChange={(open) => !open && setEditingZinenka(null)}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 h-8 w-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditClick(cislo);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
+              <div className="absolute top-2 right-2 flex gap-1">
+                <Dialog open={editingZinenka === cislo} onOpenChange={(open) => !open && setEditingZinenka(null)}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(cislo);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Přejmenovat žíněnku #{cislo}</DialogTitle>
@@ -157,10 +247,46 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeletingZinenka(cislo);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             </div>
           ))}
         </div>
       </CardContent>
     </Card>
+
+    <AlertDialog open={deletingZinenka !== null} onOpenChange={(open) => !open && setDeletingZinenka(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Opravdu chcete smazat žíněnku #{deletingZinenka}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tato akce je nevratná. Budou smazány všechny úseky měření spojené s touto žíněnkou včetně jejich součtů.
+            {deletingZinenka === pocetZinenek && " Počet žíněnek bude snížen o 1."}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Zrušit</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => deletingZinenka && deleteZinenkaMutation.mutate(deletingZinenka)}
+            disabled={deleteZinenkaMutation.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleteZinenkaMutation.isPending ? "Mažu..." : "Smazat žíněnku"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
