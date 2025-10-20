@@ -47,6 +47,29 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
     },
   });
 
+  // Načíst aktivní úseky (běžící měření)
+  const { data: aktivniUseky } = useQuery({
+    queryKey: ["aktivni-useky", akceId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("useky")
+        .select(`
+          *,
+          rozhodci:rozhodci_id (
+            cislo_id,
+            jmeno,
+            prijmeni
+          )
+        `)
+        .eq("akce_id", akceId)
+        .is("end_ts", null);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 5000, // Automatický refresh každých 5 sekund
+  });
+
   // Update názvu žíněnky
   const updateNazevMutation = useMutation({
     mutationFn: async ({ cislo, nazev, casomeric }: { cislo: number; nazev: string; casomeric: string }) => {
@@ -112,6 +135,10 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
   const getZinenkaNazev = (cislo: number) => {
     const zinenka = zinenky?.find(z => z.cislo === cislo);
     return zinenka?.nazev || `Žíněnka #${cislo}`;
+  };
+
+  const getAktivniRozhodci = (cislo: number) => {
+    return aktivniUseky?.find(u => u.zinenka_cislo === cislo);
   };
 
   // Přidat novou žíněnku
@@ -206,7 +233,7 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
             <div key={cislo} className="relative">
               <Button
                 onClick={() => navigate(`/akce/${akceId}/zinenka/${cislo}`)}
-                className="h-32 w-full text-xl font-bold"
+                className="h-40 w-full text-xl font-bold relative"
                 size="lg"
               >
                 <div className="flex flex-col items-center gap-2">
@@ -218,6 +245,25 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
                         Časoměřič: {zinenky.find(z => z.cislo === cislo)?.casomeric}
                       </div>
                     )}
+                    <div className="mt-2 pt-2 border-t border-primary-foreground/20 text-sm font-normal">
+                      {(() => {
+                        const aktivni = getAktivniRozhodci(cislo);
+                        if (aktivni) {
+                          return (
+                            <div className="flex items-center justify-center gap-1">
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                              <span>ID {String(aktivni.rozhodci?.cislo_id).padStart(2, "0")}</span>
+                              {aktivni.rozhodci?.jmeno && aktivni.rozhodci?.prijmeni && (
+                                <span className="text-xs">
+                                  ({aktivni.rozhodci.jmeno.charAt(0)}. {aktivni.rozhodci.prijmeni})
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+                        return <span className="text-muted-foreground/60">—</span>;
+                      })()}
+                    </div>
                   </div>
                 </div>
               </Button>
