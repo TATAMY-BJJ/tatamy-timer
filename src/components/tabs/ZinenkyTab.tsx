@@ -23,9 +23,10 @@ import { toast } from "sonner";
 interface ZinenkyTabProps {
   akceId: string;
   pocetZinenek: number;
+  isAdmin: boolean;
 }
 
-export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
+export const ZinenkyTab = ({ akceId, pocetZinenek, isAdmin }: ZinenkyTabProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editingZinenka, setEditingZinenka] = useState<number | null>(null);
@@ -217,14 +218,16 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
                 Otevřete administraci jednotlivých žíněnek
               </CardDescription>
             </div>
-            <Button
-              onClick={() => addZinenkaMutation.mutate()}
-              disabled={addZinenkaMutation.isPending}
-              size="sm"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Přidat žíněnku
-            </Button>
+            {isAdmin && (
+              <Button
+                onClick={() => addZinenkaMutation.mutate()}
+                disabled={addZinenkaMutation.isPending}
+                size="sm"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Přidat žíněnku
+              </Button>
+            )}
           </div>
         </CardHeader>
       <CardContent>
@@ -268,71 +271,73 @@ export const ZinenkyTab = ({ akceId, pocetZinenek }: ZinenkyTabProps) => {
                 </div>
               </Button>
               
-              <div className="absolute top-2 right-2 flex gap-1">
-                <Dialog open={editingZinenka === cislo} onOpenChange={(open) => !open && setEditingZinenka(null)}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(cislo);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle className="font-heading">Přejmenovat žíněnku #{cislo}</DialogTitle>
-                    <DialogDescription>
-                      Zadejte vlastní název pro tuto žíněnku (nechte prázdné pro výchozí název)
-                    </DialogDescription>
-                  </DialogHeader>
-                   <div className="space-y-4 py-4">
-                     <div className="space-y-2">
-                       <Label htmlFor="nazev">Název žíněnky</Label>
-                       <Input
-                         id="nazev"
-                         value={novyNazev}
-                         onChange={(e) => setNovyNazev(e.target.value)}
-                         placeholder={`Žíněnka #${cislo}`}
-                       />
+              {isAdmin && (
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <Dialog open={editingZinenka === cislo} onOpenChange={(open) => !open && setEditingZinenka(null)}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(cislo);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="font-heading">Přejmenovat žíněnku #{cislo}</DialogTitle>
+                      <DialogDescription>
+                        Zadejte vlastní název pro tuto žíněnku (nechte prázdné pro výchozí název)
+                      </DialogDescription>
+                    </DialogHeader>
+                     <div className="space-y-4 py-4">
+                       <div className="space-y-2">
+                         <Label htmlFor="nazev">Název žíněnky</Label>
+                         <Input
+                           id="nazev"
+                           value={novyNazev}
+                           onChange={(e) => setNovyNazev(e.target.value)}
+                           placeholder={`Žíněnka #${cislo}`}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="casomeric">Časoměřič (nepovinné)</Label>
+                         <Input
+                           id="casomeric"
+                           value={novyCasomeric}
+                           onChange={(e) => setNovyCasomeric(e.target.value)}
+                           placeholder="Např. Jan Novák"
+                         />
+                       </div>
                      </div>
-                     <div className="space-y-2">
-                       <Label htmlFor="casomeric">Časoměřič (nepovinné)</Label>
-                       <Input
-                         id="casomeric"
-                         value={novyCasomeric}
-                         onChange={(e) => setNovyCasomeric(e.target.value)}
-                         placeholder="Např. Jan Novák"
-                       />
-                     </div>
-                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setEditingZinenka(null)}>
-                      Zrušit
-                    </Button>
-                    <Button onClick={handleSaveNazev} disabled={updateNazevMutation.isPending}>
-                      Uložit
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setEditingZinenka(null)}>
+                        Zrušit
+                      </Button>
+                      <Button onClick={handleSaveNazev} disabled={updateNazevMutation.isPending}>
+                        Uložit
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeletingZinenka(cislo);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingZinenka(cislo);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              )}
             </div>
           ))}
         </div>

@@ -9,10 +9,14 @@ import { SouctyTab } from "@/components/tabs/SouctyTab";
 import { UsekyTab } from "@/components/tabs/UsekyTab";
 import { ZinenkyTab } from "@/components/tabs/ZinenkyTab";
 import { TatamyLogo } from "@/components/TatamyLogo";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AkceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
+  
+  const isAdmin = userRole === "administrator";
 
   const { data: akce, isLoading } = useQuery({
     queryKey: ["akce", id],
@@ -73,28 +77,36 @@ const AkceDetail = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs defaultValue="rozhodci" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'} mb-8`}>
             <TabsTrigger value="rozhodci">Rozhodčí</TabsTrigger>
             <TabsTrigger value="zinenky">Žíněnky</TabsTrigger>
-            <TabsTrigger value="soucty">Součty</TabsTrigger>
-            <TabsTrigger value="useky">Úseky</TabsTrigger>
+            {isAdmin && (
+              <>
+                <TabsTrigger value="soucty">Součty</TabsTrigger>
+                <TabsTrigger value="useky">Úseky</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           <TabsContent value="rozhodci">
-            <RozhodciTab akceId={id!} />
+            <RozhodciTab akceId={id!} isAdmin={isAdmin} />
           </TabsContent>
 
           <TabsContent value="zinenky">
-            <ZinenkyTab akceId={id!} pocetZinenek={akce.pocet_zinenek} />
+            <ZinenkyTab akceId={id!} pocetZinenek={akce.pocet_zinenek} isAdmin={isAdmin} />
           </TabsContent>
 
-          <TabsContent value="soucty">
-            <SouctyTab akceId={id!} />
-          </TabsContent>
+          {isAdmin && (
+            <>
+              <TabsContent value="soucty">
+                <SouctyTab akceId={id!} />
+              </TabsContent>
 
-          <TabsContent value="useky">
-            <UsekyTab akceId={id!} />
-          </TabsContent>
+              <TabsContent value="useky">
+                <UsekyTab akceId={id!} />
+              </TabsContent>
+            </>
+          )}
         </Tabs>
       </div>
     </div>

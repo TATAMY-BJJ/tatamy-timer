@@ -3,15 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, LogOut } from "lucide-react";
 import { useState } from "react";
 import { NovaAkceDialog } from "@/components/NovaAkceDialog";
 import { EditAkceDialog } from "@/components/EditAkceDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { TatamyLogo } from "@/components/TatamyLogo";
+import { useAuth } from "@/contexts/AuthContext";
 const AkceList = () => {
   const navigate = useNavigate();
+  const { userRole, signOut } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -28,6 +30,8 @@ const AkceList = () => {
     toast
   } = useToast();
   const queryClient = useQueryClient();
+  
+  const isAdmin = userRole === "administrator";
   const {
     data: akce,
     isLoading
@@ -99,10 +103,18 @@ const AkceList = () => {
             <h1 className="text-4xl font-heading font-bold text-foreground">TATAMY | EVIDENCE ROZHODČÍCH</h1>
             <p className="text-muted-foreground mt-1">Správa turnajů</p>
           </div>
-          <Button onClick={() => setDialogOpen(true)} size="lg">
-            <Plus className="mr-2 h-5 w-5" />
-            Založit akci
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Button onClick={() => setDialogOpen(true)} size="lg">
+                <Plus className="mr-2 h-5 w-5" />
+                Založit akci
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => signOut()}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Odhlásit se
+            </Button>
+          </div>
         </div>
 
         {isLoading ? <div className="text-center py-12">
@@ -124,12 +136,14 @@ const AkceList = () => {
                         Počet žíněnek: {akce.pocet_zinenek}
                       </CardDescription>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={e => {
-                e.stopPropagation();
-                handleEditClick(akce);
-              }} className="shrink-0">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    {isAdmin && (
+                      <Button variant="ghost" size="icon" onClick={e => {
+                  e.stopPropagation();
+                  handleEditClick(akce);
+                }} className="shrink-0">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -137,12 +151,14 @@ const AkceList = () => {
                     <Button size="sm" onClick={() => navigate(`/akce/${akce.id}`)} className="flex-1">
                       Otevřít detail →
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={e => {
-                e.stopPropagation();
-                handleDeleteClick(akce);
-              }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {isAdmin && (
+                      <Button variant="destructive" size="sm" onClick={e => {
+                  e.stopPropagation();
+                  handleDeleteClick(akce);
+                }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>)}
@@ -158,9 +174,9 @@ const AkceList = () => {
           </Card>}
       </div>
 
-      <NovaAkceDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      {isAdmin && <NovaAkceDialog open={dialogOpen} onOpenChange={setDialogOpen} />}
       
-      {akceToEdit && <EditAkceDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} akce={akceToEdit} />}
+      {isAdmin && akceToEdit && <EditAkceDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} akce={akceToEdit} />}
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

@@ -9,9 +9,10 @@ import { toast } from "sonner";
 
 interface RozhodciTabProps {
   akceId: string;
+  isAdmin: boolean;
 }
 
-export const RozhodciTab = ({ akceId }: RozhodciTabProps) => {
+export const RozhodciTab = ({ akceId, isAdmin }: RozhodciTabProps) => {
   const queryClient = useQueryClient();
   const [editedData, setEditedData] = useState<Record<number, { jmeno: string; prijmeni: string }>>({});
 
@@ -99,11 +100,13 @@ export const RozhodciTab = ({ akceId }: RozhodciTabProps) => {
                     placeholder="Jméno"
                     value={getValue(cisloId, "jmeno")}
                     onChange={(e) => handleChange(cisloId, "jmeno", e.target.value)}
+                    disabled={!isAdmin}
                   />
                   <Input
                     placeholder="Příjmení"
                     value={getValue(cisloId, "prijmeni")}
                     onChange={(e) => handleChange(cisloId, "prijmeni", e.target.value)}
+                    disabled={!isAdmin}
                   />
                 </div>
               </div>
@@ -111,13 +114,15 @@ export const RozhodciTab = ({ akceId }: RozhodciTabProps) => {
           })}
         </div>
 
-        <Button
-          onClick={() => saveRozhodci.mutate()}
-          disabled={saveRozhodci.isPending || Object.keys(editedData).length === 0}
-          size="lg"
-        >
-          {saveRozhodci.isPending ? "Ukládání..." : "Uložit rozhodčí"}
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={() => saveRozhodci.mutate()}
+            disabled={saveRozhodci.isPending || Object.keys(editedData).length === 0}
+            size="lg"
+          >
+            {saveRozhodci.isPending ? "Ukládání..." : "Uložit rozhodčí"}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
