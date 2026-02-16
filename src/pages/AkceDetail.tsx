@@ -8,6 +8,7 @@ import { RozhodciTab } from "@/components/tabs/RozhodciTab";
 import { SouctyTab } from "@/components/tabs/SouctyTab";
 import { UsekyTab } from "@/components/tabs/UsekyTab";
 import { ZinenkyTab } from "@/components/tabs/ZinenkyTab";
+import { MzdyTab } from "@/components/tabs/MzdyTab";
 import { TatamyLogo } from "@/components/TatamyLogo";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -77,13 +78,14 @@ const AkceDetail = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs defaultValue="rozhodci" className="w-full">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'} mb-8`}>
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-2'} mb-8`}>
             <TabsTrigger value="rozhodci">Rozhodčí</TabsTrigger>
             <TabsTrigger value="zinenky">Žíněnky</TabsTrigger>
             {isAdmin && (
               <>
                 <TabsTrigger value="soucty">Součty</TabsTrigger>
                 <TabsTrigger value="useky">Úseky</TabsTrigger>
+                <TabsTrigger value="mzdy">Mzdy</TabsTrigger>
               </>
             )}
           </TabsList>
@@ -104,6 +106,10 @@ const AkceDetail = () => {
 
               <TabsContent value="useky">
                 <UsekyTab akceId={id!} />
+              </TabsContent>
+
+              <TabsContent value="mzdy">
+                <MzdyTab akceId={id!} pocetZinenek={akce.pocet_zinenek} />
               </TabsContent>
             </>
           )}
