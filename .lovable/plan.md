@@ -1,54 +1,40 @@
 
-# Nová záložka "Mzdy" pro výpočet odměn rozhodčích
+# Úprava výpočtu mezd -- per žíněnka
 
-## Shrnutí požadavku
+## Jak to bude fungovat
 
-Nová záložka "Mzdy" v detailu akce (viditelná pouze pro administrátora), která:
+Pro každého rozhodčího se mzda počítá za každou žíněnku zvlášť a pak se sečte:
 
-1. Umožní zadat **základní částku** (default 3 000 Kč) platnou pro všechny rozhodčí
-2. Umožní zadat **délku každé žíněnky** (hodiny a minuty)
-3. Automaticky vypočítá mzdu každého rozhodčího na základě:
-   - 100% odpracovaného času = polovina délky žíněnky (protože na žíněnce jsou 2 rozhodčí)
-   - Skutečný odpracovaný čas se bere z existujících dat (tabulka součtů)
-   - Poměr skutečného času ku 100% se aplikuje na základní částku
-   - Výsledek se zaokrouhlí matematicky na nejbližších 500 Kč
+1. Žíněnka trvá Y minut, 100% = Y / 2
+2. Rozhodčí na ní odpískal X minut
+3. Poměr = X / (Y / 2)
+4. Mzda za žíněnku = základ (3 000 Kč) x poměr
+5. Celková mzda = součet mezd za všechny žíněnky, zaokrouhleno na nejbližších 500 Kč
 
-### Příklad výpočtu
-- Žíněnka trvala 7h 30min = 450 min
-- 100% pro rozhodčího = 225 min
-- Rozhodčí odpracoval 280 min -> poměr = 280/225 = 124,4%
-- Mzda = 3000 x 1,244 = 3 733 Kč -> zaokrouhleno na **3 500 Kč**
+### Příklad
+- Žíněnka 1: 480 min, odpískal 200 min -> 200/240 = 83,3% -> 2 500 Kč
+- Žíněnka 2: 360 min, odpískal 150 min -> 150/180 = 83,3% -> 2 500 Kč
+- Celkem: 5 000 Kč (zaokrouhlení beze změny)
 
 ---
 
-## Technický plán
+## Technické změny
 
-### 1. Nová komponenta `src/components/tabs/MzdyTab.tsx`
+### Úprava `src/components/tabs/MzdyTab.tsx`
 
-- Přijímá prop `akceId` a `pocetZinenek`
-- Obsahuje:
-  - Input pro základní částku (default 3 000 Kč) - uloženo v local state
-  - Sekci pro zadání délky každé žíněnky (hodiny + minuty) pro každou žíněnku v akci
-  - Tabulku rozhodčích s výpočtem mzdy
+Komponenta již existuje, bude přepsána výpočetní logika:
 
-- **Data z databáze**: Použije existující view `soucty` (filtr na `akce_id`) pro odpracovaný čas a tabulku `zinenky` pro seznam žíněnek
-- Také použije `useky` data pro zjištění, na které žíněnce rozhodčí pracoval
+**Aktuální logika** (chybná): sčítá veškerý čas rozhodčího dohromady a porovnává s celkovým 100% časem.
 
-- **Logika výpočtu**:
-  1. Pro každého rozhodčího zjistit, na kterých žíněnkách pracoval a kolik celkem odpracoval (ze `soucty` view, per žíněnka)
-  2. Pro každou žíněnku vzít zadanou délku / 2 = 100% čas
-  3. Sečíst 100% časy žíněnek, na kterých rozhodčí pracoval = celkový 100% čas
-  4. Poměr = skutečný čas / celkový 100% čas
-  5. Mzda = základ x poměr, zaokrouhleno na nejbližších 500 Kč
+**Nová logika**:
+1. Z view `soucty` získat řádky per rozhodčí per žíněnka (`rozhodci_id`, `zinenka_cislo`, `celkem_ms`)
+2. Pro každý řádek vypočítat mzdu za danou žíněnku: `zaklad * (celkem_ms_min / (delka_zinenky_min / 2))`
+3. Sečíst mzdy za všechny žíněnky daného rozhodčího
+4. Zaokrouhlit celkový součet na nejbližších 500 Kč
 
-- **UI**: Tabulka se sloupci: ID, Jméno, Odpracováno (min), 100% čas (min), Poměr (%), Mzda (Kč)
+**UI tabulka** -- nové sloupce:
+- ID, Jméno
+- Detail per žíněnka (které žíněnky, kolik minut, poměr)
+- Celkem mzda (Kč) -- zaokrouhlená
 
-### 2. Úprava `src/pages/AkceDetail.tsx`
-
-- Import `MzdyTab`
-- Přidání záložky "Mzdy" do TabsList (admin only) - celkem 5 záložek pro admina
-- Úprava grid-cols z `grid-cols-4` na `grid-cols-5` pro admina
-
-### 3. Bez databázových změn
-
-Délky žíněnek a základní částka budou v lokálním stavu komponenty (session-only). Pokud bude potřeba persistovat, lze přidat později. Výpočet je čistě na frontendu z existujících dat.
+Žádné databázové změny nejsou potřeba -- vše se počítá z existujícího view `soucty`.
