@@ -1,26 +1,17 @@
 
 
-# Persistentní ukládání délek žíněnek a základní částky
+## Problem
 
-## Co se změní
+Na záložce Mzdy se délky žíněnek zobrazují podle toho, které záznamy existují v databázi — pokud pro některou žíněnku ještě nebyl vytvořen řádek (např. žíněnka 10), v seznamu chybí. Navíc pořadí závisí na pořadí z databáze místo jednoduchého sekvenčního řazení 1, 2, 3...
 
-Délky žíněnek a základní mzdová částka se budou ukládat do databáze, takže přetrvají i po obnovení stránky.
+## Řešení
 
-## Technické kroky
+Na řádku 235 v `MzdyTab.tsx` se `zinenkyCisla` bere z `zinenky?.map(z => z.cislo)`, což vrací jen žíněnky, které mají záznam v DB. Místo toho se vždy použije sekvenční pole `[1, 2, 3, ..., pocetZinenek]`, aby byly všechny žíněnky zobrazeny ve správném pořadí bez ohledu na stav databáze.
 
-### 1. Databázová migrace
+## Technický detail
 
-- Přidat sloupce `delka_hodiny` (integer, default 0) a `delka_minuty` (integer, default 0) do tabulky `zinenky`
-- Přidat sloupec `mzdy_zaklad` (integer, default 3000) do tabulky `akce`
+Změna v `src/components/tabs/MzdyTab.tsx`:
 
-### 2. Úprava komponenty `src/components/tabs/MzdyTab.tsx`
+- Řádek 235: nahradit `zinenkyCisla` za `Array.from({ length: pocetZinenek }, (_, i) => i + 1)` — vždy generovat čísla 1 až N bez závislosti na existujících DB záznamech.
 
-- Načítat délky žíněnek z databáze (query na `zinenky`) a základní částku z tabulky `akce`
-- Při změně délky žíněnky automaticky uložit novou hodnotu do databáze (upsert do `zinenky`)
-- Při změně základní částky automaticky uložit do `akce`
-- Použít debounce nebo on-blur ukládání, aby se neposílal request při každém stisku klávesy
-- Zobrazit vizuální potvrzení uložení (např. krátký toast nebo indikátor)
-
-### 3. Žádné nové tabulky ani RLS změny
-
-Existující RLS politiky na `zinenky` a `akce` již pokrývají čtení i zápis.
+Jde o jednořádkovou opravu, žádné další soubory ani databáze se nemění.
