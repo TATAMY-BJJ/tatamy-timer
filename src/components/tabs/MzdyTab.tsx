@@ -232,6 +232,10 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
     return results;
   }, [soucty, delkyZinenek, zaklad]);
 
+  const nazevZinenky = useCallback((cislo: number) => {
+    return zinenky?.find(z => z.cislo === cislo)?.nazev || `Žíněnka ${cislo}`;
+  }, [zinenky]);
+
   const zinenkyCisla = Array.from({ length: pocetZinenek }, (_, i) => i + 1);
 
   return (
@@ -263,7 +267,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                 const delka = delkyZinenek[cislo] ?? { hodiny: 0, minuty: 0 };
                 return (
                   <div key={cislo} className="flex items-center gap-2 p-2 border rounded-md bg-muted/30">
-                    <span className="text-sm font-medium min-w-[70px]">Žíněnka {cislo}</span>
+                    <span className="text-sm font-medium min-w-[70px]">{nazevZinenky(cislo)}</span>
                     <Input
                       type="number"
                       className="w-16"
@@ -330,7 +334,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                               <TableCell rowSpan={v.perZinenka.length} className="align-top">{v.jmeno}</TableCell>
                             </>
                           )}
-                          <TableCell className="text-center">{z.cislo}</TableCell>
+                          <TableCell className="text-center">{nazevZinenky(z.cislo)}</TableCell>
                           <TableCell className="text-right">{z.odpracovanoMin}</TableCell>
                           <TableCell className="text-right">{z.stoProcentMin}</TableCell>
                           <TableCell className="text-right">
