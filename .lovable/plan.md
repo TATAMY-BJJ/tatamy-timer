@@ -1,17 +1,25 @@
 
 
-## Problem
+## Propsání názvů žíněnek v záložce Mzdy
 
-Na záložce Mzdy se délky žíněnek zobrazují podle toho, které záznamy existují v databázi — pokud pro některou žíněnku ještě nebyl vytvořen řádek (např. žíněnka 10), v seznamu chybí. Navíc pořadí závisí na pořadí z databáze místo jednoduchého sekvenčního řazení 1, 2, 3...
+### Problém
+Na záložce Mzdy se všude zobrazuje jen číslo žíněnky (např. "Žíněnka 1", "2"), přestože žíněnky mají v databázi uložený vlastní název (např. "MAT 1 KIDS").
 
-## Řešení
+### Řešení
+Vytvořit pomocnou mapu `cislo -> nazev` z načtených dat `zinenky` a použít ji na dvou místech:
 
-Na řádku 235 v `MzdyTab.tsx` se `zinenkyCisla` bere z `zinenky?.map(z => z.cislo)`, což vrací jen žíněnky, které mají záznam v DB. Místo toho se vždy použije sekvenční pole `[1, 2, 3, ..., pocetZinenek]`, aby byly všechny žíněnky zobrazeny ve správném pořadí bez ohledu na stav databáze.
+1. **Nastavení délek** (řádek 266) -- místo "Žíněnka 1" zobrazit název, pokud existuje, např. "MAT 1 KIDS", jinak fallback "Žíněnka 1"
+2. **Tabulka výpočtů** (řádek 333) -- ve sloupci "Žíněnka" místo pouhého čísla zobrazit název, pokud existuje
 
-## Technický detail
+### Technický detail
 
-Změna v `src/components/tabs/MzdyTab.tsx`:
+Změny v `src/components/tabs/MzdyTab.tsx`:
 
-- Řádek 235: nahradit `zinenkyCisla` za `Array.from({ length: pocetZinenek }, (_, i) => i + 1)` — vždy generovat čísla 1 až N bez závislosti na existujících DB záznamech.
+- Přidat helper funkci/mapu, která pro dané číslo žíněnky vrátí název z DB nebo fallback:
+  ```
+  const nazevZinenky = (cislo) => zinenky?.find(z => z.cislo === cislo)?.nazev || `Žíněnka ${cislo}`
+  ```
+- Řádek 266: nahradit `Žíněnka {cislo}` za výsledek helperu
+- Řádek 333: nahradit `{z.cislo}` za výsledek helperu (nebo zobrazit obojí -- název + číslo)
 
-Jde o jednořádkovou opravu, žádné další soubory ani databáze se nemění.
+Žádné databázové změny nejsou potřeba.
