@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 
 interface MzdyTabProps {
   akceId: string;
@@ -19,16 +20,21 @@ interface MzdyTabProps {
 }
 
 export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
-  const [zaklad, setZaklad] = useState(3000);
-  const [delkyZinenek, setDelkyZinenek] = useState<Record<number, { hodiny: number; minuty: number }>>(
-    () => {
-      const init: Record<number, { hodiny: number; minuty: number }> = {};
-      for (let i = 1; i <= pocetZinenek; i++) {
-        init[i] = { hodiny: 0, minuty: 0 };
-      }
-      return init;
-    }
-  );
+  const queryClient = useQueryClient();
+
+  // Fetch akce for mzdy_zaklad
+  const { data: akce } = useQuery({
+    queryKey: ["akce", akceId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("akce")
+        .select("*")
+        .eq("id", akceId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data: zinenky } = useQuery({
     queryKey: ["zinenky", akceId],
@@ -55,19 +61,109 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
     },
   });
 
-  const updateDelka = (cislo: number, field: "hodiny" | "minuty", value: number) => {
-    setDelkyZinenek((prev) => ({
-      ...prev,
-      [cislo]: { ...prev[cislo], [field]: value },
-    }));
-  };
+  // Local state initialized from DB
+  const [zaklad, setZaklad] = useState(3000);
+  const [zakladInited, setZakladInited] = useState(false);
+  const [delkyZinenek, setDelkyZinenek] = useState<Record<number, { hodiny: number; minuty: number }>>({});
+  const [delkyInited, setDelkyInited] = useState(false);
+
+  // Init zaklad from DB
+  useEffect(() => {
+    if (akce && !zakladInited) {
+      setZaklad((akce as any).mzdy_zaklad ?? 3000);
+      setZakladInited(true);
+    }
+  }, [akce, zakladInited]);
+
+  // Init delky from DB
+  useEffect(() => {
+    if (zinenky && !delkyInited) {
+      const init: Record<number, { hodiny: number; minuty: number }> = {};
+      for (let i = 1; i <= pocetZinenek; i++) {
+        const z = zinenky.find((x) => x.cislo === i);
+        init[i] = {
+          hodiny: (z as any)?.delka_hodiny ?? 0,
+          minuty: (z as any)?.delka_minuty ?? 0,
+        };
+      }
+      setDelkyZinenek(init);
+      setDelkyInited(true);
+    }
+  }, [zinenky, delkyInited, pocetZinenek]);
+
+  // Debounced save for zaklad
+  const zakladTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveZakladMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const { error } = await supabase
+        .from("akce")
+        .update({ mzdy_zaklad: value } as any)
+        .eq("id", akceId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["akce", akceId] });
+    },
+    onError: () => {
+      toast({ title: "Chyba", description: "Nepodařilo se uložit základní částku.", variant: "destructive" });
+    },
+  });
+
+  const handleZakladChange = useCallback((value: number) => {
+    setZaklad(value);
+    if (zakladTimerRef.current) clearTimeout(zakladTimerRef.current);
+    zakladTimerRef.current = setTimeout(() => {
+      saveZakladMutation.mutate(value);
+    }, 800);
+  }, [saveZakladMutation]);
+
+  // Debounced save for delka
+  const delkaTimersRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+
+  const saveDelkaMutation = useMutation({
+    mutationFn: async ({ cislo, hodiny, minuty }: { cislo: number; hodiny: number; minuty: number }) => {
+      // Check if zinenka row exists
+      const existing = zinenky?.find((z) => z.cislo === cislo);
+      if (existing) {
+        const { error } = await supabase
+          .from("zinenky")
+          .update({ delka_hodiny: hodiny, delka_minuty: minuty } as any)
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("zinenky")
+          .insert({ akce_id: akceId, cislo, delka_hodiny: hodiny, delka_minuty: minuty } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["zinenky", akceId] });
+    },
+    onError: () => {
+      toast({ title: "Chyba", description: "Nepodařilo se uložit délku žíněnky.", variant: "destructive" });
+    },
+  });
+
+  const updateDelka = useCallback((cislo: number, field: "hodiny" | "minuty", value: number) => {
+    setDelkyZinenek((prev) => {
+      const updated = { ...prev, [cislo]: { ...prev[cislo], [field]: value } };
+      // Debounced save
+      if (delkaTimersRef.current[cislo]) clearTimeout(delkaTimersRef.current[cislo]);
+      delkaTimersRef.current[cislo] = setTimeout(() => {
+        const d = updated[cislo];
+        saveDelkaMutation.mutate({ cislo, hodiny: d.hodiny, minuty: d.minuty });
+      }, 800);
+      return updated;
+    });
+  }, [saveDelkaMutation]);
 
   const roundTo500 = (value: number) => Math.round(value / 500) * 500;
 
   const vypocty = useMemo(() => {
     if (!soucty || soucty.length === 0) return [];
 
-    // Build per-referee, per-mat data
     const refereeMap = new Map<
       string,
       {
@@ -90,7 +186,6 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
       }
     }
 
-    // Aggregate celkem_ms per referee per zinenka
     const msMap = new Map<string, Map<number, number>>();
     for (const row of soucty) {
       if (!row.rozhodci_id || row.zinenka_cislo == null) continue;
@@ -99,7 +194,6 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
       rm.set(row.zinenka_cislo, (rm.get(row.zinenka_cislo) ?? 0) + (row.celkem_ms ?? 0));
     }
 
-    // Calculate per-mat wages
     for (const [refId, ref] of refereeMap) {
       const matTimes = msMap.get(refId);
       if (!matTimes) continue;
@@ -124,7 +218,6 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
       ref.perZinenka.sort((a, b) => a.cislo - b.cislo);
     }
 
-    // Build results
     const results = Array.from(refereeMap.values()).map((ref) => {
       const sumMzda = ref.perZinenka.reduce((s, z) => s + z.mzda, 0);
       return {
@@ -155,7 +248,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                 id="zaklad"
                 type="number"
                 value={zaklad}
-                onChange={(e) => setZaklad(Number(e.target.value))}
+                onChange={(e) => handleZakladChange(Number(e.target.value))}
                 min={0}
                 step={100}
               />

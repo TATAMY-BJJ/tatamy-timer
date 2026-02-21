@@ -19,6 +19,7 @@ export type Database = {
           created_at: string | null
           datum: string
           id: string
+          mzdy_zaklad: number
           nazev: string | null
           pocet_zinenek: number
         }
@@ -26,6 +27,7 @@ export type Database = {
           created_at?: string | null
           datum: string
           id?: string
+          mzdy_zaklad?: number
           nazev?: string | null
           pocet_zinenek: number
         }
@@ -33,6 +35,7 @@ export type Database = {
           created_at?: string | null
           datum?: string
           id?: string
+          mzdy_zaklad?: number
           nazev?: string | null
           pocet_zinenek?: number
         }
@@ -163,6 +166,8 @@ export type Database = {
           casomeric: string | null
           cislo: number
           created_at: string
+          delka_hodiny: number
+          delka_minuty: number
           id: string
           nazev: string | null
         }
@@ -171,6 +176,8 @@ export type Database = {
           casomeric?: string | null
           cislo: number
           created_at?: string
+          delka_hodiny?: number
+          delka_minuty?: number
           id?: string
           nazev?: string | null
         }
@@ -179,6 +186,8 @@ export type Database = {
           casomeric?: string | null
           cislo?: number
           created_at?: string
+          delka_hodiny?: number
+          delka_minuty?: number
           id?: string
           nazev?: string | null
         }
