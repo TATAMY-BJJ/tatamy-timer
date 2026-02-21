@@ -232,7 +232,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
     return results;
   }, [soucty, delkyZinenek, zaklad]);
 
-  const zinenkyCisla = zinenky?.map((z) => z.cislo) ?? Array.from({ length: pocetZinenek }, (_, i) => i + 1);
+  const zinenkyCisla = Array.from({ length: pocetZinenek }, (_, i) => i + 1);
 
   return (
     <div className="space-y-6">
