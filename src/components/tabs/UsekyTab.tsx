@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Pencil, Check, X } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,6 +24,9 @@ interface UsekyTabProps {
 
 export const UsekyTab = ({ akceId }: UsekyTabProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -73,10 +77,89 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     });
   };
 
+  const formatTimeForInput = (timestamp: string) => {
+    const d = new Date(timestamp);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    const ss = String(d.getSeconds()).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  };
+
   const formatDuration = (start: string, end: string | null) => {
     if (!end) return "Běží...";
     const ms = new Date(end).getTime() - new Date(start).getTime();
     return Math.floor(ms / 60000) + " min";
+  };
+
+  const startEditing = (usek: typeof useky extends (infer U)[] | undefined ? U : never) => {
+    if (!usek) return;
+    setEditingId(usek.id);
+    setEditStart(formatTimeForInput(usek.start_ts));
+    setEditEnd(usek.end_ts ? formatTimeForInput(usek.end_ts) : "");
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditStart("");
+    setEditEnd("");
+  };
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, start_ts, end_ts }: { id: string; start_ts: string; end_ts: string | null }) => {
+      const { error } = await supabase
+        .from("useky")
+        .update({ start_ts, end_ts })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["useky", akceId] });
+      queryClient.invalidateQueries({ queryKey: ["soucty", akceId] });
+      toast({ title: "Úsek upraven", description: "Časy byly úspěšně aktualizovány" });
+      cancelEditing();
+    },
+    onError: () => {
+      toast({ title: "Chyba", description: "Nepodařilo se upravit úsek", variant: "destructive" });
+    },
+  });
+
+  const saveEditing = (usek: NonNullable<typeof useky>[number]) => {
+    const originalDate = new Date(usek.start_ts);
+    
+    const parseTime = (timeStr: string, refDate: Date) => {
+      const parts = timeStr.split(":");
+      if (parts.length < 2) return null;
+      const h = parseInt(parts[0]);
+      const m = parseInt(parts[1]);
+      const s = parts[2] ? parseInt(parts[2]) : 0;
+      if (isNaN(h) || isNaN(m) || isNaN(s)) return null;
+      const d = new Date(refDate);
+      d.setHours(h, m, s, 0);
+      return d;
+    };
+
+    const newStart = parseTime(editStart, originalDate);
+    if (!newStart) {
+      toast({ title: "Chyba", description: "Neplatný formát času startu (HH:MM:SS)", variant: "destructive" });
+      return;
+    }
+
+    let newEnd: Date | null = null;
+    if (editEnd.trim()) {
+      const refEnd = usek.end_ts ? new Date(usek.end_ts) : originalDate;
+      newEnd = parseTime(editEnd, refEnd);
+      if (!newEnd) {
+        toast({ title: "Chyba", description: "Neplatný formát času stopu (HH:MM:SS)", variant: "destructive" });
+        return;
+      }
+    }
+
+    updateMutation.mutate({
+      id: usek.id,
+      start_ts: newStart.toISOString(),
+      end_ts: newEnd ? newEnd.toISOString() : null,
+    });
   };
 
   const deleteAllMutation = useMutation({
@@ -113,7 +196,7 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
         <CardHeader>
           <CardTitle>Všechny úseky měření</CardTitle>
           <CardDescription>
-            Kompletní seznam jednotlivých časových úseků
+            Kompletní seznam jednotlivých časových úseků — klikněte na tužku pro úpravu časů
           </CardDescription>
         </CardHeader>
       <CardContent>
@@ -130,6 +213,7 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
                   <TableHead className="text-primary font-semibold">Start</TableHead>
                   <TableHead className="text-primary font-semibold">Stop</TableHead>
                   <TableHead className="text-right text-primary font-semibold">Délka</TableHead>
+                  <TableHead className="text-primary font-semibold w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -144,10 +228,64 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
                         ? `${usek.rozhodci.jmeno.charAt(0)}. ${usek.rozhodci.prijmeni}`
                         : "-"}
                     </TableCell>
-                    <TableCell>{formatTime(usek.start_ts)}</TableCell>
-                    <TableCell>{usek.end_ts ? formatTime(usek.end_ts) : "-"}</TableCell>
+                    <TableCell>
+                      {editingId === usek.id ? (
+                        <Input
+                          value={editStart}
+                          onChange={(e) => setEditStart(e.target.value)}
+                          placeholder="HH:MM:SS"
+                          className="h-8 w-24 font-mono text-xs"
+                        />
+                      ) : (
+                        formatTime(usek.start_ts)
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === usek.id ? (
+                        <Input
+                          value={editEnd}
+                          onChange={(e) => setEditEnd(e.target.value)}
+                          placeholder="HH:MM:SS"
+                          className="h-8 w-24 font-mono text-xs"
+                        />
+                      ) : (
+                        usek.end_ts ? formatTime(usek.end_ts) : "-"
+                      )}
+                    </TableCell>
                     <TableCell className="text-right font-mono">
                       {formatDuration(usek.start_ts, usek.end_ts)}
+                    </TableCell>
+                    <TableCell>
+                      {editingId === usek.id ? (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-green-600 hover:text-green-700"
+                            onClick={() => saveEditing(usek)}
+                            disabled={updateMutation.isPending}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground"
+                            onClick={cancelEditing}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => startEditing(usek)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
