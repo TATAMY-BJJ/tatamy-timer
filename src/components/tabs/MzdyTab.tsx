@@ -236,6 +236,14 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
     return zinenky?.find(z => z.cislo === cislo)?.nazev || `Žíněnka ${cislo}`;
   }, [zinenky]);
 
+  const mena = ((akce as any)?.mena ?? "CZK") as string;
+  const menaSymbol = mena === "EUR" ? "€" : "Kč";
+  const menaLocale = mena === "EUR" ? "sk-SK" : "cs-CZ";
+  const formatMena = useCallback(
+    (value: number) => `${Math.round(value).toLocaleString(menaLocale)} ${menaSymbol}`,
+    [menaLocale, menaSymbol]
+  );
+
   const zinenkyCisla = Array.from({ length: pocetZinenek }, (_, i) => i + 1);
 
   return (
