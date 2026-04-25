@@ -323,7 +323,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                     <TableHead className="text-right">100 % (min)</TableHead>
                     <TableHead className="text-right">Poměr</TableHead>
                     <TableHead className="text-right">Mzda za ž.</TableHead>
-                    <TableHead className="text-right font-semibold">Celkem (Kč)</TableHead>
+                    <TableHead className="text-right font-semibold">Celkem ({menaSymbol})</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -333,7 +333,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                         <TableCell>{v.cislo_id}</TableCell>
                         <TableCell>{v.jmeno}</TableCell>
                         <TableCell colSpan={5} className="text-center text-muted-foreground">—</TableCell>
-                        <TableCell className="text-right font-semibold">0 Kč</TableCell>
+                        <TableCell className="text-right font-semibold">{formatMena(0)}</TableCell>
                       </TableRow>
                     ) : (
                       v.perZinenka.map((z, idx) => (
@@ -351,11 +351,11 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                             {z.stoProcentMin > 0 ? `${(z.pomer * 100).toFixed(1)} %` : "—"}
                           </TableCell>
                           <TableCell className="text-right">
-                            {z.stoProcentMin > 0 ? `${Math.round(z.mzda).toLocaleString("cs-CZ")} Kč` : "—"}
+                            {z.stoProcentMin > 0 ? formatMena(z.mzda) : "—"}
                           </TableCell>
                           {idx === 0 && (
                             <TableCell rowSpan={v.perZinenka.length} className="text-right font-semibold align-top">
-                              {v.celkovaMzda.toLocaleString("cs-CZ")} Kč
+                              {formatMena(v.celkovaMzda)}
                             </TableCell>
                           )}
                         </TableRow>
