@@ -159,7 +159,9 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
     });
   }, [saveDelkaMutation]);
 
-  const roundTo500 = (value: number) => Math.round(value / 500) * 500;
+  const mena = ((akce as any)?.mena ?? "CZK") as string;
+  const roundStep = mena === "EUR" ? 5 : 500;
+  const roundToStep = (value: number) => Math.round(value / roundStep) * roundStep;
 
   const vypocty = useMemo(() => {
     if (!soucty || soucty.length === 0) return [];
@@ -224,7 +226,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
         cislo_id: ref.cislo_id,
         jmeno: `${ref.jmeno} ${ref.prijmeni}`.trim(),
         perZinenka: ref.perZinenka,
-        celkovaMzda: roundTo500(sumMzda),
+        celkovaMzda: roundToStep(sumMzda),
       };
     });
 
@@ -235,6 +237,14 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
   const nazevZinenky = useCallback((cislo: number) => {
     return zinenky?.find(z => z.cislo === cislo)?.nazev || `Žíněnka ${cislo}`;
   }, [zinenky]);
+
+  // mena already declared above
+  const menaSymbol = mena === "EUR" ? "€" : "Kč";
+  const menaLocale = mena === "EUR" ? "sk-SK" : "cs-CZ";
+  const formatMena = useCallback(
+    (value: number) => `${Math.round(value).toLocaleString(menaLocale)} ${menaSymbol}`,
+    [menaLocale, menaSymbol]
+  );
 
   const zinenkyCisla = Array.from({ length: pocetZinenek }, (_, i) => i + 1);
 
@@ -256,7 +266,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                 min={0}
                 step={100}
               />
-              <span className="text-sm text-muted-foreground whitespace-nowrap">Kč</span>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">{menaSymbol}</span>
             </div>
           </div>
 
@@ -313,7 +323,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                     <TableHead className="text-right">100 % (min)</TableHead>
                     <TableHead className="text-right">Poměr</TableHead>
                     <TableHead className="text-right">Mzda za ž.</TableHead>
-                    <TableHead className="text-right font-semibold">Celkem (Kč)</TableHead>
+                    <TableHead className="text-right font-semibold">Celkem ({menaSymbol})</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -323,7 +333,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                         <TableCell>{v.cislo_id}</TableCell>
                         <TableCell>{v.jmeno}</TableCell>
                         <TableCell colSpan={5} className="text-center text-muted-foreground">—</TableCell>
-                        <TableCell className="text-right font-semibold">0 Kč</TableCell>
+                        <TableCell className="text-right font-semibold">{formatMena(0)}</TableCell>
                       </TableRow>
                     ) : (
                       v.perZinenka.map((z, idx) => (
@@ -341,11 +351,11 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                             {z.stoProcentMin > 0 ? `${(z.pomer * 100).toFixed(1)} %` : "—"}
                           </TableCell>
                           <TableCell className="text-right">
-                            {z.stoProcentMin > 0 ? `${Math.round(z.mzda).toLocaleString("cs-CZ")} Kč` : "—"}
+                            {z.stoProcentMin > 0 ? formatMena(z.mzda) : "—"}
                           </TableCell>
                           {idx === 0 && (
                             <TableCell rowSpan={v.perZinenka.length} className="text-right font-semibold align-top">
-                              {v.celkovaMzda.toLocaleString("cs-CZ")} Kč
+                              {formatMena(v.celkovaMzda)}
                             </TableCell>
                           )}
                         </TableRow>
