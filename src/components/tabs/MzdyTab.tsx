@@ -226,7 +226,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
         cislo_id: ref.cislo_id,
         jmeno: `${ref.jmeno} ${ref.prijmeni}`.trim(),
         perZinenka: ref.perZinenka,
-        celkovaMzda: roundTo500(sumMzda),
+        celkovaMzda: roundToStep(sumMzda),
       };
     });
 
@@ -238,7 +238,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
     return zinenky?.find(z => z.cislo === cislo)?.nazev || `Žíněnka ${cislo}`;
   }, [zinenky]);
 
-  const mena = ((akce as any)?.mena ?? "CZK") as string;
+  // mena already declared above
   const menaSymbol = mena === "EUR" ? "€" : "Kč";
   const menaLocale = mena === "EUR" ? "sk-SK" : "cs-CZ";
   const formatMena = useCallback(
