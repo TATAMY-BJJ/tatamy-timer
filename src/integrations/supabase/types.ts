@@ -19,6 +19,7 @@ export type Database = {
           created_at: string | null
           datum: string
           id: string
+          mena: string
           mzdy_zaklad: number
           nazev: string | null
           pocet_zinenek: number
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string | null
           datum: string
           id?: string
+          mena?: string
           mzdy_zaklad?: number
           nazev?: string | null
           pocet_zinenek: number
@@ -35,6 +37,7 @@ export type Database = {
           created_at?: string | null
           datum?: string
           id?: string
+          mena?: string
           mzdy_zaklad?: number
           nazev?: string | null
           pocet_zinenek?: number
