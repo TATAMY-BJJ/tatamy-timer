@@ -159,7 +159,9 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
     });
   }, [saveDelkaMutation]);
 
-  const roundTo500 = (value: number) => Math.round(value / 500) * 500;
+  const mena = ((akce as any)?.mena ?? "CZK") as string;
+  const roundStep = mena === "EUR" ? 5 : 500;
+  const roundToStep = (value: number) => Math.round(value / roundStep) * roundStep;
 
   const vypocty = useMemo(() => {
     if (!soucty || soucty.length === 0) return [];
