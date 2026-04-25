@@ -264,7 +264,7 @@ export const MzdyTab = ({ akceId, pocetZinenek }: MzdyTabProps) => {
                 min={0}
                 step={100}
               />
-              <span className="text-sm text-muted-foreground whitespace-nowrap">Kč</span>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">{menaSymbol}</span>
             </div>
           </div>
 
