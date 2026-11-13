@@ -51,7 +51,7 @@ export function parseRozpis(rawItems: TextItem[], tol = 3): RozpisResult {
     const joined = line.map((i) => i.text).join(" ");
     if (/TATAMY.*\bKIDS\b/i.test(joined)) section = "KIDS";
     if (/TATAMY.*\bADULTS\b/i.test(joined)) section = "ADULTS";
-    if (line.some((i) => /^(SEZNAM|STŘÍDÁNÍ ČASOMÍRA)/.test(i.text)) && blocks.length) blocks[blocks.length - 1].end = Math.min(blocks[blocks.length - 1].end, idx);
+    if (blocks.length && line.some((i) => i.x < blocks[blocks.length - 1].matX && /^(SEZNAM|STŘÍDÁNÍ ČASOMÍRA)/.test(i.text))) blocks[blocks.length - 1].end = Math.min(blocks[blocks.length - 1].end, idx);
     if (line.some((i) => /^ČASOMÍRA$/i.test(i.text) || /^ČASOMÍRA\b/i.test(i.text))) {
       const matItem = line.find((i) => /MAT\s*(\d+)/i.test(i.text));
       if (!matItem) return;
