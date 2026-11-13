@@ -9,6 +9,7 @@ import { SouctyTab } from "@/components/tabs/SouctyTab";
 import { UsekyTab } from "@/components/tabs/UsekyTab";
 import { ZinenkyTab } from "@/components/tabs/ZinenkyTab";
 import { MzdyTab } from "@/components/tabs/MzdyTab";
+import { ImportRozpisDialog } from "@/components/ImportRozpisDialog";
 import { TatamyLogo } from "@/components/TatamyLogo";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -73,6 +74,11 @@ const AkceDetail = () => {
           <p className="text-muted-foreground mt-1">
             Počet žíněnek: {akce.pocet_zinenek}
           </p>
+          {isAdmin && (
+            <div className="mt-3">
+              <ImportRozpisDialog akceId={id!} pocetZinenek={akce.pocet_zinenek} />
+            </div>
+          )}
         </div>
       </div>
 
