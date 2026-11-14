@@ -14,7 +14,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RotateCcw, Pencil, Check, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RotateCcw, Pencil, Check, X, Plus } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,6 +35,12 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
+  const [editCislo, setEditCislo] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+  const [addZinenka, setAddZinenka] = useState("");
+  const [addCislo, setAddCislo] = useState("");
+  const [addStart, setAddStart] = useState("");
+  const [addEnd, setAddEnd] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -64,6 +78,37 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     },
   });
 
+  const { data: akce } = useQuery({
+    queryKey: ["akce", akceId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("akce").select("*").eq("id", akceId).single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: rozhodciList } = useQuery({
+    queryKey: ["rozhodci", akceId, "useky"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rozhodci")
+        .select("id, cislo_id, jmeno, prijmeni")
+        .eq("akce_id", akceId)
+        .order("cislo_id");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const findRozhodci = (cislo: string) => {
+    const t = cislo.trim();
+    if (!/^\d{1,2}$/.test(t)) return undefined;
+    return rozhodciList?.find((r) => r.cislo_id === parseInt(t));
+  };
+
+  const rozhodciLabel = (r?: { jmeno: string | null; prijmeni: string | null }) =>
+    r ? [r.jmeno, r.prijmeni].filter(Boolean).join(" ") || "(bez jména)" : "";
+
   const getZinenkaNazev = (cislo: number) => {
     const zinenka = zinenky?.find(z => z.cislo === cislo);
     return zinenka?.nazev || `Žíněnka #${cislo}`;
@@ -96,19 +141,21 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     setEditingId(usek.id);
     setEditStart(formatTimeForInput(usek.start_ts));
     setEditEnd(usek.end_ts ? formatTimeForInput(usek.end_ts) : "");
+    setEditCislo(usek.rozhodci ? String(usek.rozhodci.cislo_id).padStart(2, "0") : "");
   };
 
   const cancelEditing = () => {
     setEditingId(null);
     setEditStart("");
     setEditEnd("");
+    setEditCislo("");
   };
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, start_ts, end_ts }: { id: string; start_ts: string; end_ts: string | null }) => {
+    mutationFn: async ({ id, start_ts, end_ts, rozhodci_id }: { id: string; start_ts: string; end_ts: string | null; rozhodci_id: string }) => {
       const { error } = await supabase
         .from("useky")
-        .update({ start_ts, end_ts })
+        .update({ start_ts, end_ts, rozhodci_id })
         .eq("id", id);
 
       if (error) throw error;
@@ -116,7 +163,7 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["useky", akceId] });
       queryClient.invalidateQueries({ queryKey: ["soucty", akceId] });
-      toast({ title: "Úsek upraven", description: "Časy byly úspěšně aktualizovány" });
+      toast({ title: "Úsek upraven", description: "Změny byly uloženy" });
       cancelEditing();
     },
     onError: () => {
@@ -155,11 +202,67 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
       }
     }
 
+    const roz = findRozhodci(editCislo);
+    if (!roz) {
+      toast({ title: "Chyba", description: "ID neexistuje v této akci.", variant: "destructive" });
+      return;
+    }
+
     updateMutation.mutate({
+      rozhodci_id: roz.id,
       id: usek.id,
       start_ts: newStart.toISOString(),
       end_ts: newEnd ? newEnd.toISOString() : null,
     });
+  };
+
+  const addMutation = useMutation({
+    mutationFn: async (row: { zinenka_cislo: number; rozhodci_id: string; start_ts: string; end_ts: string }) => {
+      const { error } = await supabase.from("useky").insert({ ...row, akce_id: akceId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["useky", akceId] });
+      queryClient.invalidateQueries({ queryKey: ["soucty", akceId] });
+      toast({ title: "Úsek přidán" });
+      setShowAdd(false);
+      setAddZinenka(""); setAddCislo(""); setAddStart(""); setAddEnd("");
+    },
+    onError: () => {
+      toast({ title: "Chyba", description: "Nepodařilo se přidat úsek", variant: "destructive" });
+    },
+  });
+
+  const submitAdd = () => {
+    const zc = parseInt(addZinenka);
+    if (!zc || zc < 1 || zc > (akce?.pocet_zinenek ?? 0)) {
+      toast({ title: "Chyba", description: "Vyberte žíněnku", variant: "destructive" });
+      return;
+    }
+    const roz = findRozhodci(addCislo);
+    if (!roz) {
+      toast({ title: "Chyba", description: "ID neexistuje v této akci.", variant: "destructive" });
+      return;
+    }
+    const toDate = (t: string) => {
+      const m = t.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (!m || !akce) return null;
+      const [y, mo, d] = akce.datum.split("-").map(Number);
+      const h = +m[1], mi = +m[2], se = m[3] ? +m[3] : 0;
+      if (h > 23 || mi > 59 || se > 59) return null;
+      return new Date(y, mo - 1, d, h, mi, se, 0);
+    };
+    const st = toDate(addStart);
+    const en = toDate(addEnd);
+    if (!st || !en) {
+      toast({ title: "Chyba", description: "Zadejte Start i Stop ve formátu HH:MM nebo HH:MM:SS", variant: "destructive" });
+      return;
+    }
+    if (en <= st) {
+      toast({ title: "Chyba", description: "Stop musí být později než Start", variant: "destructive" });
+      return;
+    }
+    addMutation.mutate({ zinenka_cislo: zc, rozhodci_id: roz.id, start_ts: st.toISOString(), end_ts: en.toISOString() });
   };
 
   const deleteAllMutation = useMutation({
@@ -194,10 +297,18 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Všechny úseky měření</CardTitle>
-          <CardDescription>
-            Kompletní seznam jednotlivých časových úseků — klikněte na tužku pro úpravu časů
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Všechny úseky měření</CardTitle>
+              <CardDescription>
+                Kompletní seznam časových úseků — tužkou upravíte časy i ID rozhodčího
+              </CardDescription>
+            </div>
+            <Button onClick={() => setShowAdd(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Přidat úsek
+            </Button>
+          </div>
         </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -221,10 +332,26 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
                   <TableRow key={usek.id} className={index % 2 === 0 ? "bg-muted/30" : ""}>
                     <TableCell className="font-medium">{getZinenkaNazev(usek.zinenka_cislo)}</TableCell>
                     <TableCell>
-                      {String(usek.rozhodci?.cislo_id || "-").padStart(2, "0")}
+                      {editingId === usek.id ? (
+                        <Input
+                          value={editCislo}
+                          onChange={(e) => setEditCislo(e.target.value)}
+                          placeholder="00"
+                          inputMode="numeric"
+                          maxLength={2}
+                          aria-label="ID rozhodčího"
+                          className="h-8 w-14 font-mono text-xs"
+                        />
+                      ) : (
+                        usek.rozhodci ? String(usek.rozhodci.cislo_id).padStart(2, "0") : "-"
+                      )}
                     </TableCell>
                     <TableCell>
-                      {usek.rozhodci?.jmeno && usek.rozhodci?.prijmeni
+                      {editingId === usek.id ? (
+                        <span className={findRozhodci(editCislo) ? "text-sm" : "text-sm text-destructive"}>
+                          {findRozhodci(editCislo) ? rozhodciLabel(findRozhodci(editCislo)) : "ID neexistuje"}
+                        </span>
+                      ) : usek.rozhodci?.jmeno && usek.rozhodci?.prijmeni
                         ? `${usek.rozhodci.jmeno.charAt(0)}. ${usek.rozhodci.prijmeni}`
                         : "-"}
                     </TableCell>
@@ -313,6 +440,55 @@ export const UsekyTab = ({ akceId }: UsekyTabProps) => {
         )}
       </CardContent>
     </Card>
+
+    <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Přidat úsek</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="add-zin">Žíněnka</Label>
+            <select
+              id="add-zin"
+              value={addZinenka}
+              onChange={(e) => setAddZinenka(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">Vyberte žíněnku</option>
+              {Array.from({ length: akce?.pocet_zinenek ?? 0 }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>{getZinenkaNazev(n)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="add-id">ID rozhodčího (00–99)</Label>
+            <Input id="add-id" value={addCislo} onChange={(e) => setAddCislo(e.target.value)} maxLength={2} inputMode="numeric" placeholder="00" />
+            {addCislo && (
+              <p className={findRozhodci(addCislo) ? "text-sm text-muted-foreground" : "text-sm text-destructive"}>
+                {findRozhodci(addCislo) ? rozhodciLabel(findRozhodci(addCislo)) : "ID neexistuje v této akci."}
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="add-start">Start</Label>
+              <Input id="add-start" value={addStart} onChange={(e) => setAddStart(e.target.value)} placeholder="HH:MM:SS" className="font-mono" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-end">Stop</Label>
+              <Input id="add-end" value={addEnd} onChange={(e) => setAddEnd(e.target.value)} placeholder="HH:MM:SS" className="font-mono" />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowAdd(false)}>Zrušit</Button>
+          <Button onClick={submitAdd} disabled={addMutation.isPending}>
+            {addMutation.isPending ? "Ukládám..." : "Přidat úsek"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
       <AlertDialogContent>
